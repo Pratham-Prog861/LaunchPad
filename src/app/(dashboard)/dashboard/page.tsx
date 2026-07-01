@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+export const dynamic = "force-dynamic";
 import { getCmsAdapter } from "@/lib/adapters";
 import { getPersistenceAdapter } from "@/lib/persistence/file-adapter";
 import Link from "next/link";

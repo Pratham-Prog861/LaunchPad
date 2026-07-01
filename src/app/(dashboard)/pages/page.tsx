@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+export const dynamic = "force-dynamic";
 import { getCmsAdapter } from "@/lib/adapters";
 import Link from "next/link";
 import { Plus } from "lucide-react";
