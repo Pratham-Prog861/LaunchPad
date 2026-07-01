@@ -1,9 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { hasClerkE2EConfig } from "./helpers/authEnv";
 
 test.describe("Studio Editor & API Auth Gating", () => {
   test("Redirects unauthenticated users to sign-in page", async ({
     page,
   }) => {
+    test.skip(!hasClerkE2EConfig, "Clerk env vars not configured with real values");
     await page.goto("/studio/architecture-2024");
     await page.waitForURL("**/sign-in**");
   });
