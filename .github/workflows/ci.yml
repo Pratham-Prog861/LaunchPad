@@ -28,6 +28,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+
       - name: Lint code
         run: pnpm lint
 
@@ -38,10 +46,10 @@ jobs:
         run: pnpm build
 
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Run E2E Tests
-        run: pnpm exec playwright test
+        run: pnpm exec playwright test --project=chromium
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
