@@ -27,17 +27,16 @@ During development, several architectural choices were evaluated to balance perf
 The design of LaunchPad relies on the following operational assumptions:
 *   **Contentful Structure**: The space configuration in Contentful contains a content type matching the `PageSection` schema, allowing mapped delivery of layout blocks.
 *   **Authentication & Session Life Cycle**: Users are authenticated via Clerk. E2E tests in public CI pipelines use mock keys, assuming that unauthenticated API routes are evaluated for `401` gating, while UI tests are skipped when live keys are unavailable.
-*   **Release Storage**: Release snapshots are stored locally on the server under the `data/releases/[slug]` directory in JSON format.
-*   **Draft Persistence**: Draft documents are stored as mutable JSON files under the `data/drafts/` directory.
+*   **Release & Draft Persistence**: In local and CI environments, drafts and releases are stored as JSON files under the `data/` (or `/tmp/data` on Vercel) directory. In production (where real Clerk credentials are set), drafts and releases are persisted to **Clerk User/Organization Metadata** (`unsafeMetadata` / `publicMetadata`), guaranteeing cross-container serverless state sync out-of-the-box.
 *   **User Roles**: Access privileges (Viewer, Editor, Publisher) are verified using mock metadata or simulated session roles during development.
 
 ---
 
 ## 4. What is Not Included and Why
 
-*   **Live Contentful Content Management API (CMA) Writes**: The Contentful adapter is read-only (`getPage`, `listPages`). Saving drafts or publishing releases writes layout files to local storage (`data/`) instead of executing CMA write actions. This trade-off simplifies token management and prevents concurrent editor overwrite conflicts.
+*   **Live Contentful Content Management API (CMA) Writes**: The Contentful adapter is read-only (`getPage` / `listPages`). Saving drafts or publishing releases writes layout configurations to Clerk metadata (or local files) instead of executing CMA write actions. This trade-off simplifies token management and prevents concurrent editor overwrite conflicts.
 *   **Clerk Enterprise RBAC Custom Roles**: Standard Clerk development instances do not support custom roles natively. We simulated Editor/Publisher permissions at the route handler level via custom logic and mock session metadata.
-*   **Database Scaling Layer**: Local file persistence (JSON) is used instead of a database layer (e.g., PostgreSQL). For a single-tenant workspace demonstration, file system storage is sufficient and requires zero database engine setup overhead.
+*   **Traditional Standalone Database**: A standalone database engine (like PostgreSQL) is omitted. Instead, we use Clerk's user/organization metadata as our lightweight, cloud-synchronized JSON store, which avoids database connection pooling issues and environment-specific database setup overhead.
 
 ---
 
