@@ -14,4 +14,11 @@ test.describe("RBAC Permissions and Constraints", () => {
     const res = await request.get("/api/releases/architecture-2024");
     expect(res.status()).toBe(401);
   });
+
+  test("Unauthenticated requests to activities list are blocked with 401 Unauthorized", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/activities");
+    expect(res.status()).toBe(401);
+  });
 });

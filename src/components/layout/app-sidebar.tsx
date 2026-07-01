@@ -11,6 +11,7 @@ import {
   Settings,
   HelpCircle,
   BookOpen,
+  Users,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/pages", label: "Pages", icon: FileText },
   { href: "/releases", label: "Releases", icon: Rocket },
   { href: "/roles", label: "Roles", icon: Shield },
+  { href: "/organization", label: "Organization", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

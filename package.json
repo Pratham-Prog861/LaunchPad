@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "pnpm exec playwright test"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.10",

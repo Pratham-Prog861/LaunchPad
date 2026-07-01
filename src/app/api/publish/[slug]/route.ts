@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getPersistenceAdapter } from "@/lib/persistence/file-adapter";
 import { withRbac } from "@/lib/auth/with-rbac";
 import { ROLES } from "@/lib/auth/rbac";
@@ -6,6 +6,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import semverInc from "semver/functions/inc";
 import type { Release } from "@/lib/schemas/page";
 import { z } from "zod/v4";
+import { revalidatePath } from "next/cache";
 
 const PublishBodySchema = z.object({
   bumpType: z.enum(["patch", "minor", "major"]),
@@ -92,6 +93,9 @@ export const POST = withRbac<{ params: Promise<{ slug: string }> }>(
     };
 
     await persistence.saveRelease(slug, release);
+    revalidatePath("/dashboard");
+    revalidatePath("/pages");
+    revalidatePath("/releases");
 
     return NextResponse.json(release);
   },

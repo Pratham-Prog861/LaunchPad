@@ -5,6 +5,7 @@ import { getCmsAdapter } from "@/lib/adapters";
 import { withRbac } from "@/lib/auth/with-rbac";
 import { ROLES } from "@/lib/auth/rbac";
 import type { DraftPage } from "@/lib/schemas/page";
+import { revalidatePath } from "next/cache";
 
 export const GET = withRbac<unknown>(
   async () => {
@@ -76,6 +77,8 @@ export const POST = withRbac<unknown>(
     };
 
     await persistence.saveDraft(slug, newDraft);
+    revalidatePath("/dashboard");
+    revalidatePath("/pages");
     return NextResponse.json(newDraft);
   },
   { requiredRole: ROLES.EDITOR }

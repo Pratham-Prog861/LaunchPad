@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
 import { Bell, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -8,31 +8,66 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 
+interface NotificationItem {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  unread: boolean;
+}
+
+interface ActivityItem {
+  id: string;
+  title: string;
+  desc: string;
+  timeLabel: string;
+  timestamp: number;
+  iconType: "release" | "create" | "update";
+}
+
 export function TopBar() {
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: "New page created",
-      desc: "Page 'dev-demo-product' was added to drafts.",
-      time: "Just now",
-      unread: true,
-    },
-    {
-      id: 2,
-      title: "SemVer Release Bounded",
-      desc: "v2.4.0 release deployed successfully by Publisher.",
-      time: "2 hours ago",
-      unread: true,
-    },
-    {
-      id: 3,
-      title: "Database Sync Completed",
-      desc: "Mock CMS adapters fully synchronized with file persistence.",
-      time: "5 hours ago",
-      unread: false,
-    },
-  ]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [readIds, setReadIds] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("read-notifications");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem("read-notifications");
+    const loadedReadIds = saved ? JSON.parse(saved) : [];
+
+    async function loadNotifications() {
+      try {
+        const res = await fetch("/api/activities");
+        if (res.ok) {
+          const activities = await res.json();
+          const mapped = activities.map((act: ActivityItem): NotificationItem => {
+            let title = "Notification";
+            if (act.iconType === "create") title = "New page created";
+            if (act.iconType === "release") title = "Release deployed";
+            if (act.iconType === "update") title = "Page layout updated";
+
+            return {
+              id: act.id,
+              title,
+              desc: act.desc,
+              time: act.timeLabel,
+              unread: !loadedReadIds.includes(act.id),
+            };
+          });
+          setNotifications(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load notifications", err);
+      }
+    }
+
+    loadNotifications();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -41,6 +76,10 @@ export function TopBar() {
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   const markAllRead = () => {
+    const allIds = notifications.map((n) => n.id);
+    const updatedReadIds = Array.from(new Set([...readIds, ...allIds]));
+    localStorage.setItem("read-notifications", JSON.stringify(updatedReadIds));
+    setReadIds(updatedReadIds);
     setNotifications(notifications.map((n) => ({ ...n, unread: false })));
   };
 
@@ -62,6 +101,7 @@ export function TopBar() {
     { label: "Pages Table", href: "/pages", desc: "List, create, or edit pages" },
     { label: "Releases Pipeline", href: "/releases", desc: "View immutable snapshots" },
     { label: "Role Directory", href: "/roles", desc: "Check Clerk mappings" },
+    { label: "Organization Settings", href: "/organization", desc: "Manage members, invites, and profile" },
     { label: "Support Desk", href: "/support", desc: "Submit tickets" },
     { label: "Documentation", href: "/docs", desc: "Developer API guide" },
   ];
@@ -83,13 +123,13 @@ export function TopBar() {
     : staticCommands;
 
   return (
-    <header className="flex justify-between items-center px-6 w-full sticky top-0 z-50 bg-white/80 backdrop-blur-md h-16 border-b border-[#E5E7EB] md:ml-[240px] md:w-[calc(100%-240px)]">
+    <header className="flex justify-between items-center px-6 w-full sticky top-0 z-50 bg-white/80 backdrop-blur-md h-16 border-b border-border-subtle md:ml-[240px] md:w-[calc(100%-240px)]">
       {/* Search */}
       <div className="flex items-center gap-4 relative">
         <div className="relative flex items-center">
-          <Search className="absolute left-3 w-4 h-4 text-[#6B7280]" />
+          <Search className="absolute left-3 w-4 h-4 text-text-secondary" />
           <Input
-            className="pl-10 pr-4 py-1.5 bg-[#F0F3FF] border border-[#E5E7EB] rounded-lg text-sm w-64 md:w-80 focus-visible:ring-[#4F46E5]"
+            className="pl-10 pr-4 py-1.5 bg-surface-container-low border border-border-subtle rounded-lg text-sm w-64 md:w-80 focus-visible:ring-indigo"
             placeholder="Search resources (pages, actions...)"
             type="text"
             value={searchQuery}
@@ -153,7 +193,7 @@ export function TopBar() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-[#6B7280] hover:text-[#4F46E5] relative"
+            className="text-text-secondary hover:text-indigo relative"
             onClick={() => setShowNotifications(!showNotifications)}
           >
             <Bell className="w-5 h-5" />
@@ -188,7 +228,7 @@ export function TopBar() {
                       <span className="font-bold text-xs text-[#151C27]">{n.title}</span>
                       <span className="text-[9px] text-[#9CA3AF]">{n.time}</span>
                     </div>
-                    <p className="text-[11px] text-[#6B7280] mt-1 leading-normal">
+                    <p className="text-[11px] text-text-secondary mt-1 leading-normal">
                       {n.desc}
                     </p>
                   </div>

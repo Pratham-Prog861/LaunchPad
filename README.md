@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LaunchPad 🚀
 
-## Getting Started
+**LaunchPad** is a modern, interactive, drag-and-drop landing page studio and builder. Built on the latest web technologies, it allows creators and developers to visually build, edit, preview, and publish customized landing pages in minutes.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🎨 Key Features
+
+- **Drag-and-Drop Workspace**: Powered by `@dnd-kit`, allowing users to easily reorder and arrange modular landing page sections (Hero, Features, Testimonial, and CTA).
+- **Real-Time Property Editor**: Side panel to edit content, text alignment, CTA link options, and design configurations.
+- **Redux-Backed Architecture**: Uses Redux Toolkit to synchronize workspace layout edits, UI modes, and publication status.
+- **Role-Based Access Control (RBAC)**: Integrated with **Clerk Authentication** and an RBAC Simulator demonstrating access controls for admin/member roles.
+- **Interactive Schema Playground**: Learn how workspace sections map to structured JSON schemas.
+- **Clerk Organization Management**: Dedicated dashboard panel rendering Clerk's `<OrganizationProfile />` to manage membership invitations and user roles.
+- **Dynamic Notifications**: A real-time notification dropdown in the TopBar to keep track of page creations, updates, and production deployments.
+- **End-to-End Testing**: High-confidence testing configuration using **Playwright** and accessibility audits with `@axe-core/playwright`.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/) & [React 19](https://react.dev/)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) & [Radix UI](https://www.radix-ui.com/)
+- **State Management**: [Redux Toolkit](https://redux-toolkit.js.org/)
+- **Authentication**: [Clerk Auth](https://clerk.com/)
+- **Workspace Drag-and-Drop**: [@dnd-kit](https://dnd-kit.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Testing**: [Playwright](https://playwright.dev/) & [Axe Core](https://github.com/dequelabs/axe-core)
+- **CI/CD**: GitHub Actions
+
+---
+
+## 📂 Project Structure
+
+```text
+launchpad/
+├── .github/workflows/   # CI/CD Workflows
+├── src/
+│   ├── app/             # Next.js App Router (Studio, Preview, Auth, Organization, APIs, etc.)
+│   ├── components/      # UI, Layout, Landing Page Sections, Studio Editor & Renderer
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Redux Store, Auth adapters, Zod Schemas, and Utilities
+│   └── proxy.ts         # Proxy config utilities
+├── tests/               # Playwright E2E and accessibility tests
+├── playwright.config.ts # Playwright settings
+└── package.json         # Dependencies and scripts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🚀 Getting Started
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Prerequisites
 
-## Learn More
+Make sure you have [Node.js v22+](https://nodejs.org/) and [pnpm](https://pnpm.io/) installed.
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Create a `.env.local` file in the root directory and configure the Clerk API keys:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
+CLERK_SECRET_KEY=your_secret_key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+```
 
-## Deploy on Vercel
+### 3. Installation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Install dependencies using `pnpm`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm install
+```
+
+### 4. Development
+
+Run the development server:
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to explore the landing page and enter the Studio.
+
+---
+
+## 🧪 Available Scripts
+
+Inside the project directory, you can run the following scripts:
+
+- **`pnpm dev`**: Runs the app in development mode.
+- **`pnpm build`**: Builds the production bundle.
+- **`pnpm start`**: Starts the production server after building.
+- **`pnpm lint`**: Lints the project code with ESLint.
+- **`pnpm exec playwright test`**: Runs the Playwright E2E tests.
+
+---
+
+## 🤖 CI/CD Integration
+
+The workflow in [.github/workflows/ci.yml](file:///.github/workflows/ci.yml) is configured to run code verification (linting, type-checking, building, and running E2E tests).
+
+> [!NOTE]
+> This workflow is configured with `workflow_dispatch`, meaning it **must be manually triggered** from the Actions tab of your GitHub repository.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](file:///LICENSE) file for details.

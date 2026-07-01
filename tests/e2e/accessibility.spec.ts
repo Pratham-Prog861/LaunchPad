@@ -6,6 +6,7 @@ test.describe("Accessibility", () => {
     page,
   }) => {
     await page.goto("/sign-in");
+    await page.waitForSelector(".cl-rootBox", { state: "visible" });
 
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
@@ -16,6 +17,7 @@ test.describe("Accessibility", () => {
 
   test("Sign-up page accessibility check", async ({ page }) => {
     await page.goto("/sign-up");
+    await page.waitForSelector(".cl-rootBox", { state: "visible" });
     const accessibilityScanResults = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
       .analyze();
