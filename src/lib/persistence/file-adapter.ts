@@ -6,10 +6,18 @@ import path from "path";
 export class FilePersistenceAdapter implements PersistenceAdapter {
   private baseDir: string;
   private rootDir: string;
+  private staticBaseDir: string;
+  private staticRootDir: string;
 
   constructor(private orgId?: string) {
-    this.rootDir = path.join(process.cwd(), "data");
+    const isVercel = process.env.VERCEL === "1" || !!process.env.NOW_BUILDER;
+    this.rootDir = isVercel
+      ? path.join("/tmp", "data")
+      : path.join(process.cwd(), "data");
+    this.staticRootDir = path.join(process.cwd(), "data");
+
     this.baseDir = orgId ? path.join(this.rootDir, orgId) : this.rootDir;
+    this.staticBaseDir = orgId ? path.join(this.staticRootDir, orgId) : this.staticRootDir;
   }
 
   private getDraftPath(slug: string, dir?: string): string {
@@ -58,24 +66,53 @@ export class FilePersistenceAdapter implements PersistenceAdapter {
     try {
       return JSON.parse(await fs.readFile(scopedPath, "utf-8")) as DraftPage;
     } catch {
-      if (this.orgId) {
-        try {
-          const fallbackPath = this.getDraftPath(slug, this.rootDir);
-          return JSON.parse(await fs.readFile(fallbackPath, "utf-8")) as DraftPage;
-        } catch {
-          return null;
+      try {
+        const staticScopedPath = this.getDraftPath(slug, this.staticBaseDir);
+        return JSON.parse(await fs.readFile(staticScopedPath, "utf-8")) as DraftPage;
+      } catch {
+        if (this.orgId) {
+          try {
+            const fallbackPath = this.getDraftPath(slug, this.rootDir);
+            return JSON.parse(await fs.readFile(fallbackPath, "utf-8")) as DraftPage;
+          } catch {
+            try {
+              const staticFallbackPath = this.getDraftPath(slug, this.staticRootDir);
+              return JSON.parse(await fs.readFile(staticFallbackPath, "utf-8")) as DraftPage;
+            } catch {
+              return null;
+            }
+          }
         }
+        return null;
       }
-      return null;
     }
   }
 
   async listDrafts(): Promise<DraftPage[]> {
     const scoped = await this.readDirRecursive(path.join(this.baseDir, "drafts"));
-    if (!this.orgId) return scoped;
+    const staticScoped = await this.readDirRecursive(path.join(this.staticBaseDir, "drafts"));
+
+    const mergedScoped = [...scoped];
+    for (const d of staticScoped) {
+      if (!mergedScoped.some((m) => m.metadata.slug === d.metadata.slug)) {
+        mergedScoped.push(d);
+      }
+    }
+
+    if (!this.orgId) return mergedScoped;
+
     const root = await this.readDirRecursive(path.join(this.rootDir, "drafts"));
-    const seen = new Set(scoped.map((d) => d.metadata.slug));
-    return [...scoped, ...root.filter((d) => !seen.has(d.metadata.slug))];
+    const staticRoot = await this.readDirRecursive(path.join(this.staticRootDir, "drafts"));
+
+    const mergedRoot = [...root];
+    for (const d of staticRoot) {
+      if (!mergedRoot.some((m) => m.metadata.slug === d.metadata.slug)) {
+        mergedRoot.push(d);
+      }
+    }
+
+    const seen = new Set(mergedScoped.map((d) => d.metadata.slug));
+    return [...mergedScoped, ...mergedRoot.filter((d) => !seen.has(d.metadata.slug))];
   }
 
   async saveRelease(slug: string, release: Release): Promise<void> {
@@ -86,22 +123,38 @@ export class FilePersistenceAdapter implements PersistenceAdapter {
 
   async listReleases(slug: string): Promise<Release[]> {
     const dir = this.getReleasesDir(slug);
-    try {
-      const files = await fs.readdir(dir);
-      const releases: Release[] = [];
-      for (const file of files) {
-        if (file.endsWith(".json")) {
-          const data = await fs.readFile(path.join(dir, file), "utf-8");
-          releases.push(JSON.parse(data) as Release);
+    const staticDir = this.getReleasesDir(slug, this.staticBaseDir);
+
+    const readReleasesFromDir = async (targetDir: string): Promise<Release[]> => {
+      try {
+        const files = await fs.readdir(targetDir);
+        const releases: Release[] = [];
+        for (const file of files) {
+          if (file.endsWith(".json")) {
+            const data = await fs.readFile(path.join(targetDir, file), "utf-8");
+            releases.push(JSON.parse(data) as Release);
+          }
         }
+        return releases;
+      } catch {
+        return [];
       }
-      return releases.sort(
-        (a, b) =>
-          new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-      );
-    } catch {
-      return [];
+    };
+
+    const activeReleases = await readReleasesFromDir(dir);
+    const staticReleases = await readReleasesFromDir(staticDir);
+
+    const mergedReleases = [...activeReleases];
+    for (const r of staticReleases) {
+      if (!mergedReleases.some((m) => m.version === r.version)) {
+        mergedReleases.push(r);
+      }
     }
+
+    return mergedReleases.sort(
+      (a, b) =>
+        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+    );
   }
 
   async getRelease(slug: string, version: string): Promise<Release | null> {
@@ -110,7 +163,13 @@ export class FilePersistenceAdapter implements PersistenceAdapter {
       const data = await fs.readFile(filePath, "utf-8");
       return JSON.parse(data) as Release;
     } catch {
-      return null;
+      try {
+        const staticFilePath = this.getReleasePath(slug, version, this.staticBaseDir);
+        const data = await fs.readFile(staticFilePath, "utf-8");
+        return JSON.parse(data) as Release;
+      } catch {
+        return null;
+      }
     }
   }
 }
