@@ -14,16 +14,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 11.9.0
-          cache: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -36,17 +36,24 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
 
-      - name: Lint code
-        run: pnpm lint
+      - name: Cache Playwright Browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
-      - name: Type check
-        run: pnpm tsc --noEmit
+      - name: Lint and Type check
+        run: pnpm lint && pnpm tsc --noEmit
 
       - name: Build application
         run: pnpm build
 
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install chromium --with-deps
+      - name: Install Playwright Browser (Chromium)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install chromium
 
       - name: Run E2E Tests
         run: pnpm exec playwright test --project=chromium
