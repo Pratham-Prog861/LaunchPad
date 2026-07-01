@@ -336,12 +336,15 @@ export default function ReleasesPage() {
                           </span>
                         </div>
                         <span className="font-mono text-text-muted">
-                          {(sect.type === "hero" || sect.type === "features"
-                            ? (sect as any).title
-                            : sect.type === "testimonial"
-                            ? (sect as any).author
-                            : (sect as any).heading
-                          ).slice(0, 15)}...
+                          {(() => {
+                            if (sect.type === "hero" || sect.type === "features") {
+                              return sect.title;
+                            }
+                            if (sect.type === "testimonial") {
+                              return sect.author;
+                            }
+                            return sect.heading;
+                          })().slice(0, 15)}...
                         </span>
                       </div>
                     ))}

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getPersistenceAdapter } from "@/lib/persistence/file-adapter";
-import { getCmsAdapter } from "@/lib/adapters";
 import { withRbac } from "@/lib/auth/with-rbac";
 import { ROLES } from "@/lib/auth/rbac";
 
